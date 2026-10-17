@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>VisionCore — ML Analytics</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script>
+    const savedTheme = localStorage.getItem('visioncore-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  </script>
+</head>
+<body>
+  <header>
+    <h1>VisionCore · ML Analytics</h1>
+    <nav>
+      <a href="/">Overview</a>
+      <a href="/analytics">ML Analytics</a>
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
+        <span id="themeIcon">🌙</span>
+        <span id="themeText">Dark</span>
+      </button>
+    </nav>
+  </header>
+
+  <p style="color: var(--text-muted); margin-top: 20px; font-size: 13px; border:none;">
+    Let the system run for 2–3 minutes to collect enough data, then refresh this page.
+  </p>
+
+  <section class="grid">
+    <div class="card"><h3>Bagging Classifier</h3><pre id="bagging">loading…</pre></div>
+    <div class="card"><h3>SVM (RBF)</h3><pre id="svm">loading…</pre></div>
+    <div class="card"><h3>DBSCAN</h3><pre id="dbscan">loading…</pre></div>
+    <div class="card"><h3>KMeans + Graph Clustering</h3><pre id="graph_clustering">loading…</pre></div>
+    <div class="card"><h3>PCA</h3><pre id="pca">loading…</pre></div>
+    <div class="card"><h3>Linear Regression</h3><pre id="regression">loading…</pre></div>
+  </section>
+
+  <script>
+    function updateToggleUI(theme) {
+      const icon = document.getElementById('themeIcon');
+      const text = document.getElementById('themeText');
+      if (theme === 'light') {
+        icon.textContent = '☀️';
+        text.textContent = 'Light';
+      } else {
+        icon.textContent = '🌙';
+        text.textContent = 'Dark';
+      }
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('visioncore-theme', next);
+      updateToggleUI(next);
+    }
+
+    updateToggleUI(localStorage.getItem('visioncore-theme') || 'dark');
+
+    fetch('/api/analytics')
+      .then(r => r.json())
+      .then(d => {
+        ['bagging', 'svm', 'dbscan', 'graph_clustering', 'pca', 'regression']
+          .forEach(k => {
+            document.getElementById(k).textContent =
+              JSON.stringify(d[k] || {}, null, 2);
+          });
+      })
+      .catch(e => console.error(e));
+  </script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>VisionCore — Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script>
+    const savedTheme = localStorage.getItem('visioncore-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  </script>
+</head>
+<body>
+  <header>
+    <h1>VisionCore · Intelligence Hub</h1>
+    <nav>
+      <a href="/">Overview</a>
+      <a href="/analytics">ML Analytics</a>
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
+        <span id="themeIcon">🌙</span>
+        <span id="themeText">Dark</span>
+      </button>
+    </nav>
+  </header>
+
+  <section class="grid">
+    <div class="card">
+      <h2>Live Feed</h2>
+      <img src="{{ url_for('video_feed') }}" alt="Live feed">
+    </div>
+    <div class="card">
+      <h2>System Status</h2>
+      <p>Occupancy <span class="status-value" id="count">0</span></p>
+      <p>Lights <span id="lights" class="status-inactive">—</span></p>
+      <p>Fan <span id="fan" class="status-inactive">—</span></p>
+      <p>Waste (kWh) <span class="status-value" id="kwh">0</span></p>
+      <p>Waste (₹) <span class="status-value" id="rupees">0</span></p>
+      <p>Session <span style="color: var(--text-muted); font-size: 12px;" id="session">—</span></p>
+    </div>
+  </section>
+
+  <script>
+    // --- Theme Toggle Logic ---
+    function updateToggleUI(theme) {
+      const icon = document.getElementById('themeIcon');
+      const text = document.getElementById('themeText');
+      if (theme === 'light') {
+        icon.textContent = '☀️';
+        text.textContent = 'Light';
+      } else {
+        icon.textContent = '🌙';
+        text.textContent = 'Dark';
+      }
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('visioncore-theme', next);
+      updateToggleUI(next);
+    }
+
+    updateToggleUI(localStorage.getItem('visioncore-theme') || 'dark');
+
+    // --- Live Status Polling ---
+    async function poll() {
+      try {
+        const r = await fetch('/status');
+        const d = await r.json();
+        
+        document.getElementById('count').textContent = d.person_count;
+        
+        const lightsEl = document.getElementById('lights');
+        lightsEl.textContent = d.energy.lights_on ? 'ON' : 'OFF';
+        lightsEl.className = d.energy.lights_on ? 'status-active' : 'status-inactive';
+
+        const fanEl = document.getElementById('fan');
+        fanEl.textContent = d.energy.fan_spinning ? 'SPINNING' : 'OFF';
+        fanEl.className = d.energy.fan_spinning ? 'status-active' : 'status-inactive';
+        
+        document.getElementById('kwh').textContent = d.energy.total_waste_kwh;
+        document.getElementById('rupees').textContent = d.energy.total_waste_rupees;
+        document.getElementById('session').textContent = d.energy.session_start;
+      } catch (e) { console.error(e); }
+    }
+    setInterval(poll, 2000);
+    poll();
+  </script>
+</body>
+</html>
